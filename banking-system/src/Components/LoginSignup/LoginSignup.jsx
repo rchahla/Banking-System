@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import "./LoginSignup.css";
+
 import SquidLogo from "../../assets/Images/SquidLogo.webp";
 import user_icon from "../../assets/Images/person.png";
 import email_icon from "../../assets/Images/email.png";
@@ -10,16 +12,71 @@ const LoginSignup = () => {
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const navigate = useNavigate();
+
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    setEmailError(validateEmail(value) ? "" : "Please enter a valid email!");
+  };
+
+  const handleSubmit = () => {
+    if (!validateEmail(email)) {
+      alert("Invalid email. Please correct it before submitting.");
+      return;
+    }
+
+    const endpoint = action === "Login" ? "/api/users/login" : "/api/users/signup";
+    const payload = action === "Login"
+      ? { email, password }
+      : { email, password, nickname };
+
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) {
+          alert(data.error);
+          setMessage(data.error);
+        } else {
+          alert(data.message || "Success!");
+          setMessage(data.message || "Success!");
+
+          if (data.message?.toLowerCase().includes("successful")) {
+            //console.log("User:", data.user);
+            console.log("🧭 Attempting navigation to /homepage");
+            navigate("/homepage"); 
+          } else {
+             //setNickname("");
+             //setEmail("");
+             //setPassword("");
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Error:", err);
+        alert("Server error");
+        setMessage("Server error.");
+      });
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") handleSubmit();
+  };
 
   return (
     <div className="LoginSignup">
       <div className="title">
         <h1>Squid</h1>
-        <img
-          src={SquidLogo}
-          alt="Squid Logo"
-          style={{ width: "120px", height: "auto", margin: "0 10px" }}
-        />
+        <img src={SquidLogo} alt="Squid Logo" style={{ width: "120px", height: "auto", margin: "0 10px" }} />
         <h1>Bank</h1>
       </div>
 
@@ -29,52 +86,60 @@ const LoginSignup = () => {
           <div className="underline"></div>
         </div>
 
-        <div className="inputs">
-          {action === "Login" ? null : (
+        <form onKeyPress={handleKeyPress}>
+          <div className="inputs">
+            {action === "Login" ? null : (
+              <div className="input">
+                <img src={user_icon} alt="User" />
+                <input
+                  type="text"
+                  placeholder="Nickname"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                />
+              </div>
+            )}
             <div className="input">
-              <img src={user_icon} alt="User" />
+              <img src={email_icon} alt="Email" />
               <input
-                type="text"
-                placeholder="Nickname"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={handleEmailChange}
               />
             </div>
-          )}
-          <div className="input">
-            <img src={email_icon} alt="Email" />
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            {emailError && <p className="error">{emailError}</p>}
+            <div className="input">
+              <img src={password_icon} alt="Password" />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="input">
-            <img src={password_icon} alt="Password" />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-        </div>
 
-        <div className="submit-container">
-          <div
-            className={action === "Login" ? "submit gray" : "submit"}
-            onClick={() => setAction("Sign Up")}
-          >
-            Sign Up
+          {message && <p className="message">{message}</p>}
+
+          <div className="submit-container">
+            <div
+              className={action === "Login" ? "submit gray" : "submit"}
+              onClick={() => setAction("Sign Up")}
+            >
+              Sign Up
+            </div>
+            <div
+              className={action === "Sign Up" ? "submit gray" : "submit"}
+              onClick={() => setAction("Login")}
+            >
+              Login
+            </div>
+            <div className="submit" onClick={handleSubmit}>
+              Submit
+            </div>
           </div>
-          <div
-            className={action === "Sign Up" ? "submit gray" : "submit"}
-            onClick={() => setAction("Login")}
-          >
-            Login
-          </div>
-        </div>
+        </form>
       </div>
     </div>
   );
