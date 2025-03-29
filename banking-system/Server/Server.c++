@@ -51,7 +51,6 @@ int main() {
             res.code = 400;
             res.set_header("Content-Type", "application/json");
             res.write("{\"error\": \"Invalid JSON\"}");
-            res.end();
             return res;
         }
 
@@ -74,7 +73,6 @@ int main() {
                 res.code = 400;
                 res.set_header("Content-Type", "application/json");
                 res.write("{\"error\": \"Email already exists.\"}");
-                res.end();
                 return res;
             }
 
@@ -92,7 +90,6 @@ int main() {
             res.code = 201;
             res.set_header("Content-Type", "application/json");
             res.write(resBody.dump());
-            res.end();
             return res;
 
         } catch (const sql::SQLException& e) {
@@ -100,7 +97,6 @@ int main() {
             res.code = 500;
             res.set_header("Content-Type", "application/json");
             res.write("{\"error\": \"Database error\"}");
-            res.end();
             return res;
         }
     });
@@ -115,7 +111,6 @@ int main() {
             res.code = 400;
             res.set_header("Content-Type", "application/json");
             res.write("{\"error\": \"Invalid JSON\"}");
-            res.end();
             return res;
         }
 
@@ -124,7 +119,7 @@ int main() {
 
         try {
             sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "ADD_YOUR_MYSQL_PASSWROD_HERE"));
+            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
             con->setSchema("banking_system");
 
             std::unique_ptr<sql::PreparedStatement> stmt(
@@ -137,7 +132,6 @@ int main() {
                 res.code = 401;
                 res.set_header("Content-Type", "application/json");
                 res.write("{\"error\": \"Invalid email or password\"}");
-                res.end();
                 return res;
             }
 
@@ -148,7 +142,6 @@ int main() {
                 res.code = 401;
                 res.set_header("Content-Type", "application/json");
                 res.write("{\"error\": \"Invalid email or password\"}");
-                res.end();
                 return res;
             }
 
@@ -162,7 +155,6 @@ int main() {
             res.code = 200;
             res.set_header("Content-Type", "application/json");
             res.write(resBody.dump());
-            res.end();
             return res;
 
         } catch (const sql::SQLException& e) {
@@ -170,7 +162,6 @@ int main() {
             res.code = 500;
             res.set_header("Content-Type", "application/json");
             res.write("{\"error\": \"Database error\"}");
-            res.end();
             return res;
         }
     });

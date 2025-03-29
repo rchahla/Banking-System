@@ -22,19 +22,19 @@ const LoginSignup = () => {
   const handleEmailChange = (e) => {
     const value = e.target.value;
     setEmail(value);
-    setEmailError(validateEmail(value) ? "" : "Please enter a valid email!");
+    setEmailError(validateEmail(value) ? "" : "Please enter a valid email !");
   };
 
   const handleSubmit = () => {
+    
     if (!validateEmail(email)) {
       alert("Invalid email. Please correct it before submitting.");
       return;
     }
 
     const endpoint = action === "Login" ? "/api/users/login" : "/api/users/signup";
-    const payload = action === "Login"
-      ? { email, password }
-      : { email, password, nickname };
+    const payload = action === "Login" ? { email, password }: { email, password, nickname };
+
 
     fetch(endpoint, {
       method: "POST",
@@ -43,6 +43,7 @@ const LoginSignup = () => {
     })
       .then((res) => res.json())
       .then((data) => {
+        console.log(data)
         if (data.error) {
           alert(data.error);
           setMessage(data.error);
@@ -50,14 +51,13 @@ const LoginSignup = () => {
           alert(data.message || "Success!");
           setMessage(data.message || "Success!");
 
-          if (data.message?.toLowerCase().includes("successful")) {
-            //console.log("User:", data.user);
-            console.log("🧭 Attempting navigation to /homepage");
+          if (data.message === "Login successful") {
             navigate("/homepage"); 
+            
           } else {
-             //setNickname("");
-             //setEmail("");
-             //setPassword("");
+             setNickname("");
+             setEmail("");
+             setPassword("");
           }
         }
       })
@@ -80,7 +80,7 @@ const LoginSignup = () => {
         <h1>Bank</h1>
       </div>
 
-      <div className="container">
+      <div className={`container ${action === "Login" ? "login-height":"signup-height"}`}>
         <div className="header2">
           <div className="text">{action}</div>
           <div className="underline"></div>

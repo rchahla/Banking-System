@@ -7,7 +7,6 @@ import HomePage from "./Components/HomePage/HomePage";
 function App() {
   return (
     <Router>
-
       <Routes>
         <Route path="/" element={<LoginSignup />} />
         <Route path="/homepage" element={<HomePage />} />
