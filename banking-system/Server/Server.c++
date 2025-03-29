@@ -5,16 +5,20 @@
 #include <cppconn/prepared_statement.h>
 #include <cppconn/resultset.h>
 #include <iostream>
+#include "bcrypt/BCrypt.hpp"
+#include "jwt-cpp/include/jwt-cpp/jwt.h"
+
+const std::string JWT_SECRET = "yourSuperSecretKey123!";
 
 int main() {
     crow::SimpleApp app;
 
-    // Get all users
+    // Get all users (for testing, avoid exposing passwords!)
     CROW_ROUTE(app, "/api/users").methods("GET"_method)([]() {
         crow::response res;
         try {
             sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "ADD_YOUR_MYSQL_PASSWORD_HERE"));
             con->setSchema("banking_system");
 
             std::unique_ptr<sql::Statement> stmt(con->createStatement());
@@ -47,7 +51,6 @@ int main() {
         auto body = crow::json::load(req.body);
 
         if (!body) {
-            std::cerr << "❌ Invalid JSON in /signup" << std::endl;
             res.code = 400;
             res.set_header("Content-Type", "application/json");
             res.write("{\"error\": \"Invalid JSON\"}");
@@ -60,7 +63,7 @@ int main() {
 
         try {
             sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "ADD_YOUR_MYSQL_PASSWORD_HERE"));
             con->setSchema("banking_system");
 
             std::unique_ptr<sql::PreparedStatement> checkStmt(
@@ -69,21 +72,20 @@ int main() {
             std::unique_ptr<sql::ResultSet> checkRes(checkStmt->executeQuery());
 
             if (checkRes->next()) {
-                std::cerr << "⚠️ Email already exists: " << email << std::endl;
                 res.code = 400;
                 res.set_header("Content-Type", "application/json");
                 res.write("{\"error\": \"Email already exists.\"}");
                 return res;
             }
 
+            std::string hashedPassword = generateHash(password);
+
             std::unique_ptr<sql::PreparedStatement> insertStmt(
                 con->prepareStatement("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)"));
             insertStmt->setString(1, nickname);
             insertStmt->setString(2, email);
-            insertStmt->setString(3, password);
+            insertStmt->setString(3, hashedPassword);
             insertStmt->execute();
-
-            std::cerr << "✅ User created: " << email << std::endl;
 
             crow::json::wvalue resBody;
             resBody["message"] = "User created successfully.";
@@ -93,7 +95,6 @@ int main() {
             return res;
 
         } catch (const sql::SQLException& e) {
-            std::cerr << "❌ SQL Error in /signup: " << e.what() << std::endl;
             res.code = 500;
             res.set_header("Content-Type", "application/json");
             res.write("{\"error\": \"Database error\"}");
@@ -107,7 +108,6 @@ int main() {
         auto body = crow::json::load(req.body);
 
         if (!body) {
-            std::cerr << "❌ Invalid JSON in /login" << std::endl;
             res.code = 400;
             res.set_header("Content-Type", "application/json");
             res.write("{\"error\": \"Invalid JSON\"}");
@@ -119,7 +119,7 @@ int main() {
 
         try {
             sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "ADD_YOUR_MYSQL_PASSWORD_HERE"));
             con->setSchema("banking_system");
 
             std::unique_ptr<sql::PreparedStatement> stmt(
@@ -128,28 +128,34 @@ int main() {
             std::unique_ptr<sql::ResultSet> result(stmt->executeQuery());
 
             if (!result->next()) {
-                std::cerr << "❌ Email not found: " << email << std::endl;
                 res.code = 401;
                 res.set_header("Content-Type", "application/json");
                 res.write("{\"error\": \"Invalid email or password\"}");
                 return res;
             }
 
-            std::string dbPassword = result->getString("password_hash");
+            std::string dbPasswordHash = result->getString("password_hash");
 
-            if (password != dbPassword) {
-                std::cerr << "❌ Incorrect password for: " << email << std::endl;
+            if (!validatePassword(password, dbPasswordHash)) {
                 res.code = 401;
                 res.set_header("Content-Type", "application/json");
                 res.write("{\"error\": \"Invalid email or password\"}");
                 return res;
             }
 
-            std::cerr << "✅ Login successful: " << email << std::endl;
+            // ✅ Generate JWT token
+            auto token = jwt::create()
+                .set_issuer("SquidBank")
+                .set_type("JWS")
+                .set_payload_claim("email", jwt::claim(email))
+                .set_payload_claim("nickname", jwt::claim(result->getString("username")))
+                .set_expires_at(std::chrono::system_clock::now() + std::chrono::hours(24))
+                .sign(jwt::algorithm::hs256{JWT_SECRET});
 
             crow::json::wvalue resBody;
             resBody["message"] = "Login successful";
-            resBody["user"]["email"] = result->getString("email");
+            resBody["token"] = token;
+            resBody["user"]["email"] = email;
             resBody["user"]["nickname"] = result->getString("username");
 
             res.code = 200;
@@ -158,7 +164,6 @@ int main() {
             return res;
 
         } catch (const sql::SQLException& e) {
-            std::cerr << "❌ SQL Error in /login: " << e.what() << std::endl;
             res.code = 500;
             res.set_header("Content-Type", "application/json");
             res.write("{\"error\": \"Database error\"}");

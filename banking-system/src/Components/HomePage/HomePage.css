@@ -1,0 +1,19 @@
+.homepage-container{
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.checking-container{
+    position: absolute;
+    display: flex;
+    width: 290px;
+    background: white;
+    flex-direction: column;
+    top: 20px;
+    right: 20px;
+    padding-left: 10px;
+}
