@@ -18,7 +18,7 @@ int main() {
         crow::response res;
         try {
             sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "ADD_YOUR_MYSQL_PASSWORD_HERE"));
+            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
             con->setSchema("banking_system");
 
             std::unique_ptr<sql::Statement> stmt(con->createStatement());
@@ -63,7 +63,7 @@ int main() {
 
         try {
             sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "ADD_YOUR_MYSQL_PASSWORD_HERE"));
+            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
             con->setSchema("banking_system");
 
             std::unique_ptr<sql::PreparedStatement> checkStmt(
@@ -119,7 +119,7 @@ int main() {
 
         try {
             sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "ADD_YOUR_MYSQL_PASSWORD_HERE"));
+            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
             con->setSchema("banking_system");
 
             std::unique_ptr<sql::PreparedStatement> stmt(
@@ -157,6 +157,8 @@ int main() {
             resBody["token"] = token;
             resBody["user"]["email"] = email;
             resBody["user"]["nickname"] = result->getString("username");
+            resBody["user"]["id"] = result->getInt("user_id");
+
 
             res.code = 200;
             res.set_header("Content-Type", "application/json");
@@ -170,6 +172,47 @@ int main() {
             return res;
         }
     });
+
+    // Get account info (account_type and balance) for a specific user
+CROW_ROUTE(app, "/api/users/<int>/accounts").methods("GET"_method)
+([](int userId) {
+    crow::response res;
+
+    try {
+        sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+        std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+        con->setSchema("banking_system");
+
+        std::unique_ptr<sql::PreparedStatement> stmt(
+            con->prepareStatement(
+                "SELECT account_type, balance FROM accounts WHERE user_id = ?"
+            )
+        );
+        stmt->setInt(1, userId);
+        std::unique_ptr<sql::ResultSet> result(stmt->executeQuery());
+
+        crow::json::wvalue accounts;
+        int i = 0;
+
+        while (result->next()) {
+            accounts[i]["account_type"] = result->getString("account_type");
+            accounts[i]["balance"] = static_cast<double>(result->getDouble("balance"));
+            i++;
+        }
+
+        res.code = 200;
+        res.set_header("Content-Type", "application/json");
+        res.write(accounts.dump());
+        return res;
+    } catch (const sql::SQLException& e) {
+        std::cerr << "❌ GET /api/users/<id>/accounts SQL Error: " << e.what() << std::endl;
+        res.code = 500;
+        res.set_header("Content-Type", "application/json");
+        res.write("{\"error\": \"Database error\"}");
+        return res;
+    }
+});
+
 
     app.port(3000).multithreaded().run();
 }

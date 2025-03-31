@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import "./HomePage.css";
 
@@ -10,9 +10,13 @@ import logout_icon from "../../assets/Images/logout.png";
 
 const HomePage = () => {
 
+    const [accounts, setAccounts] = useState([]);
+
+    const token = localStorage.getItem("token");
     const email = localStorage.getItem("email");
     const nickname = localStorage.getItem("nickname");
     const formattedNickname= nickname ? nickname.toUpperCase():nickname;
+    const user_id =localStorage.getItem("user_id");
 
     const navigate = useNavigate();
 
@@ -20,6 +24,32 @@ const HomePage = () => {
         localStorage.clear(); // or remove specific items
         navigate("/"); // or your login page route
     };
+
+    useEffect(()=>{
+        
+
+        if (!user_id) {
+            console.error("No user ID found");
+            return;
+        }
+
+        fetch(`/api/users/${user_id}/accounts`,{
+            method:"GET",
+            headers:{
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        })
+        .then((res)=>res.json())
+        .then((data)=>{
+            console.log("Accounts data: ", data)
+            setAccounts(data);
+        })
+        .catch((err) => {
+            console.error("Failed to fetch account info:", err);
+        });
+
+    }, []);
 
     return (
 
@@ -45,6 +75,8 @@ const HomePage = () => {
             <h1 style={{color:"white",fontSize:"18px"}}>My Account</h1>
         </div>
 
+        <div className='white-space'></div>
+
 
          <img src={background} alt="Mountains" className="homepage-bg" />
 
@@ -53,7 +85,34 @@ const HomePage = () => {
          <h2>GOOD MORNING, {formattedNickname}</h2>
          </div>
 
-        <h1>Welcome {formattedNickname} To Your Bank Account !</h1>
+         <div className='bank-text'>
+            <h1>Bank Accounts</h1>
+            <div className='black-underline'></div>
+         </div>
+
+         <div className='checking-account'>
+         {accounts ? (accounts.map((account, index) => (
+            <div key={index} onClick={()=>{account.account_type === "Checking" ? console.log("Checking account clicked") : console.log("Savings account clicked")}}>
+                <h3>SB {account.account_type}</h3>
+                <p>Balance: ${account.balance.toFixed(2)} CAD </p>
+            </div>
+            ))): <p>Balance: </p>}
+        </div>
+
+        <div className='bank-text'>
+            <h1>Credit Cards</h1>
+            <div className='black-underline'></div>
+         </div>
+
+         <div className='bank-text'>
+            <h1>Investments</h1>
+            <div className='black-underline'></div>
+         </div>
+
+         <div className='bank-text'>
+            <h1>Loans</h1>
+            <div className='black-underline'></div>
+         </div>
 
 
 

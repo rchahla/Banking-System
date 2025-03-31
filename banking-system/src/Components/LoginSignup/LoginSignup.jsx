@@ -57,6 +57,7 @@ const LoginSignup = () => {
             localStorage.setItem("token", data.token);
             localStorage.setItem("nickname", data.user.nickname);
             localStorage.setItem("email", data.user.email);
+            localStorage.setItem("user_id", data.user.id)
 
             navigate("/homepage");
           } else {

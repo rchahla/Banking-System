@@ -100,6 +100,12 @@
     width: 100vw;
 }
 
+.white-space{
+    color: white;
+    width: 100vw;
+    height: 200px
+}
+
 .homepage-bg {
     width: 100vw;           /* Full screen width */
     height: 400px;          /* Set desired cropped height */
@@ -131,4 +137,78 @@
     margin: 0; /* ← Add this */
 }
 
+.bank-text {
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+    margin-left: calc(100vw / 18);
+}
+
+.bank-text h1{
+    padding-top: 20px;
+    font-family: 'Frutiger', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 0;
+    font-size: 24px;
+    font-weight: 300;
+}
+
+.black-underline{
+    background-color: black;
+    height: 2px;
+    margin: 0;
+    width: 50vw;
+    margin-left: 2px;
+
+}
+
+.checking-account{
+    display: flex;
+    flex-direction: column;
+    align-self: flex-start;
+    margin-left: calc(100vw / 18);
+    /* padding-top: 10px; */
+    margin-top: 10px;
+    gap: 20px;
+
+}
+
+
+
+.checking-account > div {
+    justify-content: center;
+    align-items: center;
+    justify-content: space-between;  /* ✅ Pushes h3 left, p right */
+    display: flex;
+    flex-direction: row;
+    background-color: white;
+    /* padding: 20px; */
+    border: 1px solid #ccc;
+    width: 50vw;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    height: 40px;
+}
+
+.checking-account > div:hover {
+    box-shadow: 0 0 12px 3px rgba(0, 106, 195, 0.5);
+    cursor: pointer;
+    
+}
+
+.checking-account > div h3 {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+    padding-left: 10px;
+    font-weight: 300;
+    color: #006ac3; 
+}
+
+.checking-account > div p {
+    font-size: 14px;
+    margin: 0;
+    color: #1f1f1f;
+    padding-right: 10px;
+}
 
