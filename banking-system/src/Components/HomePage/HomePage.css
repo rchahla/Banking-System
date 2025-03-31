@@ -1,4 +1,9 @@
+
+
+
+
 .homepage-container{
+    background: white;
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -16,4 +21,89 @@
     top: 20px;
     right: 20px;
     padding-left: 10px;
+}
+
+
+
+
+.logo-text-wrapper {
+    position: absolute;
+    top: 20px;
+    left: calc(100vw / 18); 
+    display: flex;
+    align-items: center;
+
+}
+
+.logo-text{
+    font-family: 'Frutiger', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #344662;
+    font-size: 18px;
+    margin-top: -25px; 
+}
+
+.logo-img {
+    width: 80px;
+    height: auto;
+}
+
+
+.logo-text-wrapper2 {
+    position: absolute;
+    top: 20px;
+    right: calc(100vw / 8); 
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+}
+
+.logo-text2{
+    font-family: 'Frutiger', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #344662;
+    font-size: 18px;
+}
+
+.logo-img2 {
+    width: 20px;
+    height: auto;
+}
+
+
+.signout-wrapper{
+    position: absolute;
+    top: 26px;
+    right: calc(100vw / 24); 
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: yellow;
+    height: 40px;
+}
+
+.signout-wrapper:hover{
+    border: 2px solid black;
+    cursor: pointer;
+    background-color: orange;
+}
+
+.seperator{
+    top :110px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    background-color: #344662;
+    height: 30px;
+    width: 100vw;
+}
+
+.homepage-bg {
+    width: 100vw;           /* Full screen width */
+    height: 400px;          /* Set desired cropped height */
+    object-fit: cover;      /* Crops the image without stretching */
+    object-position:center; /* Keeps it centered */
+    display: block;
 }

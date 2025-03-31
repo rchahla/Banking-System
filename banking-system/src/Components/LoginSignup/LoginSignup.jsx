@@ -98,7 +98,7 @@ const LoginSignup = () => {
                 <img src={user_icon} alt="User" />
                 <input
                   type="text"
-                  placeholder="Nickname"
+                  placeholder="First and Lastname"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                 />
