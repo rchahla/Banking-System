@@ -107,3 +107,28 @@
     object-position:center; /* Keeps it centered */
     display: block;
 }
+
+.account-summary{
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    margin-top: 100px;
+    left: calc(100vw / 18);
+    gap: 0px; 
+}
+
+.account-info{
+    color: white;
+    font-size: 32px;
+    padding: 0px;
+    margin: 0; /* ← Add this */
+
+}
+
+.account-summary h2 {
+    color: white;
+    font-size: 14px;
+    margin: 0; /* ← Add this */
+}
+
+

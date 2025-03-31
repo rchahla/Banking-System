@@ -46,7 +46,12 @@ const HomePage = () => {
         </div>
 
 
-         <img src={background} alt="Mountains" className="homepage-bg" /> 
+         <img src={background} alt="Mountains" className="homepage-bg" />
+
+         <div className='account-summary'>
+         <h1 className='account-info'>Account Summary</h1>
+         <h2>GOOD MORNING, {formattedNickname}</h2>
+         </div>
 
         <h1>Welcome {formattedNickname} To Your Bank Account !</h1>
 
