@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import "./LoginSignup.css";
 
 import SquidLogo from "../../assets/Images/SquidLogo.webp";
@@ -31,10 +31,10 @@ const LoginSignup = () => {
       return;
     }
 
-    const endpoint = action === "Login" ? "/api/users/login" : "/api/users/signup";
-    const payload = action === "Login"
-      ? { email, password }
-      : { email, password, nickname };
+    const endpoint =
+      action === "Login" ? "/api/users/login" : "/api/users/signup";
+    const payload =
+      action === "Login" ? { email, password } : { email, password, nickname };
 
     fetch(endpoint, {
       method: "POST",
@@ -57,7 +57,7 @@ const LoginSignup = () => {
             localStorage.setItem("token", data.token);
             localStorage.setItem("nickname", data.user.nickname);
             localStorage.setItem("email", data.user.email);
-            localStorage.setItem("user_id", data.user.id)
+            localStorage.setItem("user_id", data.user.id);
 
             navigate("/homepage");
           } else {
@@ -82,11 +82,19 @@ const LoginSignup = () => {
     <div className="LoginSignup">
       <div className="title">
         <h1>Squid</h1>
-        <img src={SquidLogo} alt="Squid Logo" style={{ width: "120px", height: "auto", margin: "0 10px" }} />
+        <img
+          src={SquidLogo}
+          alt="Squid Logo"
+          style={{ width: "120px", height: "auto", margin: "0 10px" }}
+        />
         <h1>Bank</h1>
       </div>
 
-      <div className={`container ${action === "Login" ? "login-height" : "signup-height"}`}>
+      <div
+        className={`container ${
+          action === "Login" ? "login-height" : "signup-height"
+        }`}
+      >
         <div className="header2">
           <div className="text">{action}</div>
           <div className="underline"></div>

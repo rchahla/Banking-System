@@ -1,214 +1,210 @@
-
-
-
-
-.homepage-container{
-    background: white;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    align-items: center;
-    justify-content: center;
-
+.homepage-container {
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100vw;
+  min-height: 100vh;
 }
 
-.checking-container{
-    position: absolute;
-    display: flex;
-    width: 290px;
-    background: white;
-    flex-direction: column;
-    top: 20px;
-    right: 20px;
-    padding-left: 10px;
+/* === top-bar and children === */
+.top-bar {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px calc(100vw / 18);
+  box-sizing: border-box;
 }
-
-
-
 
 .logo-text-wrapper {
-    position: absolute;
-    top: 20px;
-    left: calc(100vw / 18); 
-    display: flex;
-    align-items: center;
-
-}
-
-.logo-text{
-    font-family: 'Frutiger', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #344662;
-    font-size: 18px;
-    margin-top: -25px; 
+  display: flex;
+  align-items: center;
 }
 
 .logo-img {
-    width: 80px;
-    height: auto;
+  width: 80px;
+  height: auto;
 }
 
-
-.logo-text-wrapper2 {
-    position: absolute;
-    top: 20px;
-    right: calc(100vw / 8); 
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
+.logo-text {
+  font-family: "Frutiger", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #344662;
+  font-size: 18px;
+  margin-left: 10px;
 }
 
-.logo-text2{
-    font-family: 'Frutiger', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #344662;
-    font-size: 18px;
+.logo-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .logo-img2 {
-    width: 20px;
-    height: auto;
+  width: 20px;
+  height: auto;
 }
 
-
-.signout-wrapper{
-    position: absolute;
-    top: 26px;
-    right: calc(100vw / 24); 
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    background-color: yellow;
-    height: 40px;
+.logo-text2 {
+  font-family: "Frutiger", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #344662;
+  font-size: 18px;
 }
 
-.signout-wrapper:hover{
-    border: 2px solid black;
-    cursor: pointer;
-    background-color: orange;
+.signout-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background-color: yellow;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 5px;
 }
 
-.seperator{
-    top :110px;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    position: absolute;
-    background-color: #344662;
-    height: 30px;
-    width: 100vw;
+.signout-wrapper:hover {
+  border: 2px solid black;
+  cursor: pointer;
+  background-color: orange;
 }
 
-.white-space{
-    color: white;
-    width: 100vw;
-    height: 200px
+/* === separator === */
+.seperator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #344662;
+  height: 30px;
+  width: 100%;
+}
+
+/* === account-container and children === */
+.account-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
 }
 
 .homepage-bg {
-    width: 100vw;           /* Full screen width */
-    height: 400px;          /* Set desired cropped height */
-    object-fit: cover;      /* Crops the image without stretching */
-    object-position:center; /* Keeps it centered */
-    display: block;
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
 }
 
-.account-summary{
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    margin-top: 100px;
-    left: calc(100vw / 18);
-    gap: 0px; 
+.account-summary {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  top: 250px;
+  left: calc(100vw / 18);
 }
 
-.account-info{
-    color: white;
-    font-size: 32px;
-    padding: 0px;
-    margin: 0; /* ← Add this */
-
+.account-info {
+  color: white;
+  font-size: 32px;
+  padding: 0;
+  margin: 0;
 }
 
 .account-summary h2 {
-    color: white;
-    font-size: 14px;
-    margin: 0; /* ← Add this */
+  color: white;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* === bottom-container and its children === */
+.bottom-container {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+}
+
+/* === bank-container and children === */
+.bank-container {
+  display: flex;
+  flex-direction: column;
+  height: auto;
 }
 
 .bank-text {
-    align-self: flex-start;
-    display: flex;
-    flex-direction: column;
-    margin-left: calc(100vw / 18);
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  margin-left: calc(100vw / 18);
+  margin-top: 20px;
 }
 
-.bank-text h1{
-    padding-top: 20px;
-    font-family: 'Frutiger', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    margin: 0;
-    font-size: 24px;
-    font-weight: 300;
+.bank-text h1 {
+  font-family: "Frutiger", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 300;
 }
 
-.black-underline{
-    background-color: black;
-    height: 2px;
-    margin: 0;
-    width: 50vw;
-    margin-left: 2px;
-
+.black-underline {
+  background-color: black;
+  height: 2px;
+  margin: 0;
+  width: 50vw;
+  margin-left: 2px;
 }
 
-.checking-account{
-    display: flex;
-    flex-direction: column;
-    align-self: flex-start;
-    margin-left: calc(100vw / 18);
-    /* padding-top: 10px; */
-    margin-top: 10px;
-    gap: 20px;
-
+.checking-account {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  margin-left: calc(100vw / 18);
+  margin-top: 10px;
+  gap: 20px;
 }
-
-
 
 .checking-account > div {
-    justify-content: center;
-    align-items: center;
-    justify-content: space-between;  /* ✅ Pushes h3 left, p right */
-    display: flex;
-    flex-direction: row;
-    background-color: white;
-    /* padding: 20px; */
-    border: 1px solid #ccc;
-    width: 50vw;
-    text-align: center;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    height: 40px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #ccc;
+  width: 50vw;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  height: 40px;
+  padding: 0 10px;
 }
 
 .checking-account > div:hover {
-    box-shadow: 0 0 12px 3px rgba(0, 106, 195, 0.5);
-    cursor: pointer;
-    
+  box-shadow: 0 0 12px 3px rgba(0, 106, 195, 0.5);
+  cursor: pointer;
 }
 
 .checking-account > div h3 {
-    font-size: 16px;
-    font-weight: bold;
-    margin: 0;
-    padding-left: 10px;
-    font-weight: 300;
-    color: #006ac3; 
+  font-size: 16px;
+  font-weight: 300;
+  margin: 0;
+  color: #006ac3;
 }
 
 .checking-account > div p {
-    font-size: 14px;
-    margin: 0;
-    color: #1f1f1f;
-    padding-right: 10px;
+  font-size: 14px;
+  margin: 0;
+  color: #1f1f1f;
 }
 
+/* === transfers-container === */
+.transfers-container {
+  background-color: #f2f6f6;
+  width: 400px;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  margin-top: calc(100vh / 6);
+  margin-left: calc(100vw / 10);
+}
