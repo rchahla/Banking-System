@@ -57,16 +57,17 @@
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  background-color: yellow;
+  background-color: #fedf01;
   height: 40px;
   padding: 0 10px;
-  border-radius: 5px;
+  border-radius: 0px;
 }
 
 .signout-wrapper:hover {
-  border: 2px solid black;
+  border-radius: 0px;
   cursor: pointer;
-  background-color: orange;
+  background-color: #ffba00;
+  border: 2px solid black;
 }
 
 /* === separator === */
@@ -173,7 +174,7 @@
   align-items: center;
   background-color: white;
   border: 1px solid #ccc;
-  width: 50vw;
+  width: 49vw;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   height: 40px;
@@ -199,12 +200,103 @@
 }
 
 /* === transfers-container === */
+
 .transfers-container {
-  background-color: #f2f6f6;
-  width: 400px;
-  height: 400px;
   display: flex;
   flex-direction: column;
-  margin-top: calc(100vh / 6);
-  margin-left: calc(100vw / 10);
+  height: 500px;
+  margin-bottom: 10px;
+  /* margin-top: calc(100vh / 13); */
+  /* margin-left: calc(100vw / 13); */
+  margin-left: 50px;
+  margin-top: 20px;
+  gap: 0px;
+}
+
+.transfers-title {
+  font-family: "Frutiger", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 300;
+  align-self: center;
+  padding-bottom: 10px;
+}
+
+.transfers {
+  background-color: #f2f6f6;
+  width: 400px;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.transfers-text {
+  font-family: "Frutiger", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 50;
+  padding-top: 20px;
+  padding-left: 20px;
+}
+
+.dropdown {
+  font-size: 15px;
+  margin: 20px;
+  margin-bottom: 0px;
+  padding: 15px;
+  background-color: white;
+  border-radius: 0px;
+  border: 1px solid black;
+}
+
+.amount-input-container {
+  display: flex;
+  align-items: center;
+  border: 1px solid #999;
+  width: 200px; /* adjust as needed */
+  height: 50px;
+  background-color: white;
+  margin: 20px;
+}
+
+.currency-box {
+  background-color: #f2f6f6;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #999;
+  font-size: 16px;
+  height: 50px;
+}
+
+.amount-input {
+  border: none;
+  padding-left: 10px;
+  font-size: 16px;
+  width: 100%;
+  outline: none;
+}
+
+.transfer-submit {
+  background-color: #006ac3;
+  height: 60px;
+  width: 360px;
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submit-text {
+  font-family: "Frutiger", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 100px;
+  color: white;
+}
+
+.transfer-submit:hover {
+  background-color: #015294;
+  cursor: pointer;
 }

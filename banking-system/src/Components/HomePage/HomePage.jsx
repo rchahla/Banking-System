@@ -60,8 +60,20 @@ const HomePage = () => {
         </div>
 
         <div className="signout-wrapper" onClick={handleSignOut}>
-          <img src={logout_icon} alt="Logout Logo" style={{ width: "30px" }} />
-          <h1 style={{ fontSize: "18px", paddingRight: "10px" }}>Sign Out</h1>
+          <img
+            src={logout_icon}
+            alt="Logout Logo"
+            style={{ width: "20px", paddingRight: "5px" }}
+          />
+          <h1
+            style={{
+              fontSize: "18px",
+              paddingRight: "10px",
+              fontWeight: "100",
+            }}
+          >
+            Sign Out
+          </h1>
         </div>
       </div>
 
@@ -110,7 +122,38 @@ const HomePage = () => {
           </div>
         </div>
 
-        <div className="transfers-container"></div>
+        <div className="transfers-container">
+          <h1 className="transfers-title">Transfers and Payments</h1>
+          <div className="transfers">
+            <h1 className="transfers-text">From</h1>
+            <select className="dropdown">
+              <option value="">Select Account</option>
+              <option value="checking">Checking Account</option>
+              <option value="savings">Savings Account</option>
+              <option value="credit">Credit Card</option>
+            </select>
+            <h1 className="transfers-text">To</h1>
+            <select className="dropdown">
+              <option value="">Select Account</option>
+              <option value="checking">Checking Account</option>
+              <option value="savings">Savings Account</option>
+              <option value="credit">Credit Card</option>
+            </select>
+            <h1 className="transfers-text">Amount</h1>
+            <div className="amount-input-container">
+              <div className="currency-box">$</div>
+              <input type="text" className="amount-input" placeholder="0.00" />
+            </div>
+            <div
+              className="transfer-submit"
+              onClick={() => {
+                console.log("Submit has been clicked");
+              }}
+            >
+              <h1 className="submit-text">Submit</h1>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* You can add more sections below here and layout will expand properly */}
