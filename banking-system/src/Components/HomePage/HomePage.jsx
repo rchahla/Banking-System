@@ -9,11 +9,9 @@ import logout_icon from "../../assets/Images/logout.png";
 
 const HomePage = () => {
   const [accounts, setAccounts] = useState([]);
-
   const token = localStorage.getItem("token");
-  const email = localStorage.getItem("email");
   const nickname = localStorage.getItem("nickname");
-  const formattedNickname = nickname ? nickname.toUpperCase() : nickname;
+  const formattedNickname = nickname ? nickname.toUpperCase() : "";
   const user_id = localStorage.getItem("user_id");
 
   const navigate = useNavigate();
@@ -44,7 +42,41 @@ const HomePage = () => {
       .catch((err) => {
         console.error("Failed to fetch account info:", err);
       });
-  }, []);
+  }, [user_id, token]);
+
+  const handleTransfer = () => {
+    const fromAccount = document.getElementById("fromAccountDropdown").value;
+    const toAccount = document.getElementById("toAccountDropdown").value;
+    const amountInput = document.querySelector(".amount-input").value;
+    const amount = parseFloat(amountInput);
+
+    if (!fromAccount || !toAccount || isNaN(amount)) {
+      console.error("Invalid transfer details");
+      return;
+    }
+
+    fetch("/api/transfer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        user_id: parseInt(user_id),
+        from_account: fromAccount,
+        to_account: toAccount,
+        amount: amount,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Transfer response: ", data);
+        // Optionally refresh account balances or notify the user of success/failure
+      })
+      .catch((err) => {
+        console.error("Transfer error:", err);
+      });
+  };
 
   return (
     <div className="homepage-container">
@@ -82,7 +114,7 @@ const HomePage = () => {
       </div>
 
       <div className="account-container">
-        <img src={background} alt="Mountains" className="homepage-bg" />
+        <img src={background} alt="Background" className="homepage-bg" />
         <div className="account-summary">
           <h1 className="account-info">Account Summary</h1>
           <h2>GOOD MORNING, {formattedNickname}</h2>
@@ -97,22 +129,24 @@ const HomePage = () => {
           </div>
 
           <div className="checking-account">
-            {accounts ? (
+            {accounts && accounts.length > 0 ? (
               accounts.map((account, index) => (
                 <div
                   key={index}
                   onClick={() => {
-                    account.account_type === "Checking"
-                      ? console.log("Checking account clicked")
-                      : console.log("Savings account clicked");
+                    if (account.account_type === "Checking") {
+                      console.log("Checking account clicked");
+                    } else {
+                      console.log("Savings account clicked");
+                    }
                   }}
                 >
                   <h3>SB {account.account_type}</h3>
-                  <p>Balance: ${account.balance.toFixed(2)} CAD </p>
+                  <p>Balance: ${account.balance.toFixed(2)} CAD</p>
                 </div>
               ))
             ) : (
-              <p>Balance: </p>
+              <p>No accounts found</p>
             )}
           </div>
 
@@ -126,37 +160,32 @@ const HomePage = () => {
           <h1 className="transfers-title">Transfers and Payments</h1>
           <div className="transfers">
             <h1 className="transfers-text">From</h1>
-            <select className="dropdown">
+            <select className="dropdown" id="fromAccountDropdown">
               <option value="">Select Account</option>
-              <option value="checking">Checking Account</option>
-              <option value="savings">Savings Account</option>
-              <option value="credit">Credit Card</option>
+              <option value="Checking">Checking Account</option>
+              <option value="Savings">Savings Account</option>
+              <option value="Credit">Credit Card</option>
             </select>
             <h1 className="transfers-text">To</h1>
-            <select className="dropdown">
+            <select className="dropdown" id="toAccountDropdown">
               <option value="">Select Account</option>
-              <option value="checking">Checking Account</option>
-              <option value="savings">Savings Account</option>
-              <option value="credit">Credit Card</option>
+              <option value="Checking">Checking Account</option>
+              <option value="Savings">Savings Account</option>
+              <option value="Credit">Credit Card</option>
             </select>
             <h1 className="transfers-text">Amount</h1>
             <div className="amount-input-container">
               <div className="currency-box">$</div>
               <input type="text" className="amount-input" placeholder="0.00" />
             </div>
-            <div
-              className="transfer-submit"
-              onClick={() => {
-                console.log("Submit has been clicked");
-              }}
-            >
+            <div className="transfer-submit" onClick={handleTransfer}>
               <h1 className="submit-text">Submit</h1>
             </div>
           </div>
         </div>
       </div>
 
-      {/* You can add more sections below here and layout will expand properly */}
+      {/* Additional sections can be added here */}
     </div>
   );
 };
