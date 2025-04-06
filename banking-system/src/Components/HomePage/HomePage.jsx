@@ -197,7 +197,11 @@ const HomePage = () => {
                   </div>
                 ))}
 
-            {accounts.length < 2 && (
+            {accounts.filter(
+              (account) =>
+                account.account_type === "Checking" ||
+                account.account_type === "Savings"
+            ).length < 2 && (
               <div className="open-account">
                 <img
                   src={add_circle}

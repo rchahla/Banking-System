@@ -281,113 +281,162 @@ int main() {
         return futureResponse.get();
     });
 
-    // POST /api/transfer - Priority 1 (as before)
-    CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& req) {
-        int priority = 1;
-        auto futureResponse = scheduler.scheduleTask(priority, [req]() -> crow::response {
-            crow::response res;
-            auto body = crow::json::load(req.body);
-            if (!body) {
-                res.code = 400;
-                res.set_header("Content-Type", "application/json");
-                res.write("{\"error\": \"Invalid JSON\"}");
-                return res;
-            }
-            int userId = body["user_id"].i();
-            std::string fromAccountType = body["from_account"].s();
-            std::string toAccountType = body["to_account"].s();
-            double amount = body["amount"].d();
-            if (amount <= 0) {
-                res.code = 400;
-                res.set_header("Content-Type", "application/json");
-                res.write("{\"error\": \"Transfer amount must be greater than zero.\"}");
-                return res;
-            }
-            const int maxRetries = 3;
-            int retryCount = 0;
-            bool success = false;
-            while (retryCount < maxRetries && !success) {
-                try {
-                    sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                    std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
-                    con->setSchema("banking_system");
-                    con->setAutoCommit(false);
-                    
-                    std::unique_ptr<sql::PreparedStatement> selectFromStmt(
-                        con->prepareStatement("SELECT account_id, balance FROM accounts WHERE user_id = ? AND account_type = ? FOR UPDATE"));
-                    selectFromStmt->setInt(1, userId);
-                    selectFromStmt->setString(2, fromAccountType);
-                    std::unique_ptr<sql::ResultSet> fromResult(selectFromStmt->executeQuery());
-                    if (!fromResult->next()) {
-                        con->rollback();
-                        res.code = 400;
-                        res.set_header("Content-Type", "application/json");
-                        res.write("{\"error\": \"Source account not found.\"}");
-                        return res;
-                    }
-                    double fromBalance = fromResult->getDouble("balance");
-                    int fromAccountId = fromResult->getInt("account_id");
-                    if (fromBalance < amount) {
-                        con->rollback();
-                        res.code = 400;
-                        res.set_header("Content-Type", "application/json");
-                        res.write("{\"error\": \"Insufficient funds in source account.\"}");
-                        return res;
-                    }
-                    std::unique_ptr<sql::PreparedStatement> selectToStmt(
-                        con->prepareStatement("SELECT account_id, balance FROM accounts WHERE user_id = ? AND account_type = ? FOR UPDATE"));
-                    selectToStmt->setInt(1, userId);
-                    selectToStmt->setString(2, toAccountType);
-                    std::unique_ptr<sql::ResultSet> toResult(selectToStmt->executeQuery());
-                    if (!toResult->next()) {
-                        con->rollback();
-                        res.code = 400;
-                        res.set_header("Content-Type", "application/json");
-                        res.write("{\"error\": \"Destination account not found.\"}");
-                        return res;
-                    }
-                    int toAccountId = toResult->getInt("account_id");
-                    std::unique_ptr<sql::PreparedStatement> updateFromStmt(
-                        con->prepareStatement("UPDATE accounts SET balance = balance - ? WHERE account_id = ?"));
-                    updateFromStmt->setDouble(1, amount);
-                    updateFromStmt->setInt(2, fromAccountId);
-                    updateFromStmt->executeUpdate();
-                    std::unique_ptr<sql::PreparedStatement> updateToStmt(
-                        con->prepareStatement("UPDATE accounts SET balance = balance + ? WHERE account_id = ?"));
-                    updateToStmt->setDouble(1, amount);
-                    updateToStmt->setInt(2, toAccountId);
-                    updateToStmt->executeUpdate();
-                    con->commit();
-                    success = true;
-                    crow::json::wvalue resBody;
-                    resBody["message"] = "Transfer successful.";
-                    res.code = 200;
+    // POST /api/transfer - Priority 1
+CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& req) {
+    int priority = 1;
+    auto futureResponse = scheduler.scheduleTask(priority, [req]() -> crow::response {
+        crow::response res;
+        auto body = crow::json::load(req.body);
+        if (!body) {
+            res.code = 400;
+            res.set_header("Content-Type", "application/json");
+            res.write("{\"error\": \"Invalid JSON\"}");
+            return res;
+        }
+
+        int userId = body["user_id"].i();
+        std::string fromAccountType = body["from_account"].s();
+        std::string toAccountField = body["to_account"].s();
+        double amount = body["amount"].d();
+
+        if (amount <= 0) {
+            res.code = 400;
+            res.set_header("Content-Type", "application/json");
+            res.write("{\"error\": \"Transfer amount must be greater than zero.\"}");
+            return res;
+        }
+
+        const int maxRetries = 3;
+        int retryCount = 0;
+        bool success = false;
+
+        std::unique_ptr<sql::Connection> con;  // Move con outside try/catch
+
+        while (retryCount < maxRetries && !success) {
+            try {
+                sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+                con.reset(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                con->setSchema("banking_system");
+                con->setAutoCommit(false);
+
+                // --- Withdraw from sender's account ---
+                std::unique_ptr<sql::PreparedStatement> selectFromStmt(
+                    con->prepareStatement("SELECT account_id, balance FROM accounts WHERE user_id = ? AND account_type = ? FOR UPDATE"));
+                selectFromStmt->setInt(1, userId);
+                selectFromStmt->setString(2, fromAccountType);
+                std::unique_ptr<sql::ResultSet> fromResult(selectFromStmt->executeQuery());
+
+                if (!fromResult->next()) {
+                    con->rollback();
+                    res.code = 400;
                     res.set_header("Content-Type", "application/json");
-                    res.write(resBody.dump());
+                    res.write("{\"error\": \"Source account not found.\"}");
                     return res;
-                } catch (const sql::SQLException &e) {
-                    if (e.getErrorCode() == 1213) { // Deadlock error code in MySQL
-                        ++retryCount;
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                        continue;
-                    } else {
-                        try { /* attempt rollback if possible */ } catch (...) {}
-                        res.code = 500;
+                }
+
+                double fromBalance = fromResult->getDouble("balance");
+                int fromAccountId = fromResult->getInt("account_id");
+
+                if (fromBalance < amount) {
+                    con->rollback();
+                    res.code = 400;
+                    res.set_header("Content-Type", "application/json");
+                    res.write("{\"error\": \"Insufficient funds in source account.\"}");
+                    return res;
+                }
+
+                // --- Determine if 'to_account' is a recipient email or local account type ---
+                int toUserId = userId;
+                std::string toAccountType = toAccountField;
+                bool isEmailTransfer = toAccountField.find('@') != std::string::npos;
+
+                if (isEmailTransfer) {
+                    std::unique_ptr<sql::PreparedStatement> findRecipient(
+                        con->prepareStatement("SELECT user_id FROM users WHERE email = ?"));
+                    findRecipient->setString(1, toAccountField);
+                    std::unique_ptr<sql::ResultSet> recipientResult(findRecipient->executeQuery());
+
+                    if (!recipientResult->next()) {
+                        con->rollback();
+                        res.code = 404;
                         res.set_header("Content-Type", "application/json");
-                        res.write("{\"error\": \"Database error during transfer.\"}");
+                        res.write("{\"error\": \"Recipient email not found.\"}");
                         return res;
                     }
+
+                    toUserId = recipientResult->getInt("user_id");
+                    toAccountType = "Checking";  // default receiving account type
+                }
+
+                // --- Deposit to recipient's account ---
+                std::unique_ptr<sql::PreparedStatement> selectToStmt(
+                    con->prepareStatement("SELECT account_id, balance FROM accounts WHERE user_id = ? AND account_type = ? FOR UPDATE"));
+                selectToStmt->setInt(1, toUserId);
+                selectToStmt->setString(2, toAccountType);
+                std::unique_ptr<sql::ResultSet> toResult(selectToStmt->executeQuery());
+
+                if (!toResult->next()) {
+                    con->rollback();
+                    res.code = 400;
+                    res.set_header("Content-Type", "application/json");
+                    res.write("{\"error\": \"Destination account not found.\"}");
+                    return res;
+                }
+
+                int toAccountId = toResult->getInt("account_id");
+
+                // --- Perform the transfer ---
+                std::unique_ptr<sql::PreparedStatement> updateFromStmt(
+                    con->prepareStatement("UPDATE accounts SET balance = balance - ? WHERE account_id = ?"));
+                updateFromStmt->setDouble(1, amount);
+                updateFromStmt->setInt(2, fromAccountId);
+                updateFromStmt->executeUpdate();
+
+                std::unique_ptr<sql::PreparedStatement> updateToStmt(
+                    con->prepareStatement("UPDATE accounts SET balance = balance + ? WHERE account_id = ?"));
+                updateToStmt->setDouble(1, amount);
+                updateToStmt->setInt(2, toAccountId);
+                updateToStmt->executeUpdate();
+
+                con->commit();
+                success = true;
+
+                crow::json::wvalue resBody;
+                resBody["message"] = "Transfer successful.";
+                res.code = 200;
+                res.set_header("Content-Type", "application/json");
+                res.write(resBody.dump());
+                return res;
+            } catch (const sql::SQLException& e) {
+                if (e.getErrorCode() == 1213) {  // Deadlock error code
+                    ++retryCount;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    continue;
+                } else {
+                    try {
+                        if (con) con->rollback();
+                    } catch (...) {}
+                    res.code = 500;
+                    res.set_header("Content-Type", "application/json");
+                    res.write("{\"error\": \"Database error during transfer.\"}");
+                    return res;
                 }
             }
-            if (!success) {
-                res.code = 500;
-                res.set_header("Content-Type", "application/json");
-                res.write("{\"error\": \"Transfer failed due to database deadlock. Please try again later.\"}");
-            }
-            return res;
-        });
-        return futureResponse.get();
+        }
+
+        if (!success) {
+            res.code = 500;
+            res.set_header("Content-Type", "application/json");
+            res.write("{\"error\": \"Transfer failed due to database deadlock. Please try again later.\"}");
+        }
+
+        return res;
     });
+
+    return futureResponse.get();
+});
+
+
 
     CROW_ROUTE(app, "/api/users/<int>/accounts")
     .methods("POST"_method)
