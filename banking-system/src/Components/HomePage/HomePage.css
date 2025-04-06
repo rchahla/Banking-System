@@ -390,3 +390,45 @@
   background-color: #015294;
   cursor: pointer;
 }
+
+.add-people-container {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  width: auto;
+  margin-left: 30px;
+  margin-top: 20px;
+  gap: 0px;
+}
+
+.add-people-title {
+  font-family: "Frutiger", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 300;
+  align-self: center;
+  padding-bottom: 10px;
+}
+
+.add-people {
+  background-color: #f2f6f6;
+  width: 300px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.people-email {
+  margin: 20px;
+  margin-top: 40px;
+  height: 40px;
+  font-size: 18px;
+}
+
+.people-email::placeholder {
+  font-size: 17px; /* 👈 Increase this to make the placeholder text bigger */
+}
+
+.add-people-container .transfer-submit {
+  width: 260px;
+}

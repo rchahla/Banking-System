@@ -335,6 +335,20 @@ const HomePage = () => {
             </div>
           </div>
         </div>
+
+        <div className="add-people-container">
+          <h1 className="add-people-title">Add People To eTransfer</h1>
+          <div className="add-people">
+            <input
+              type="text"
+              className="people-email"
+              placeholder="Their Email Address"
+            />
+            <div className="transfer-submit" onClick={handleTransfer}>
+              <h1 className="submit-text">Add</h1>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
