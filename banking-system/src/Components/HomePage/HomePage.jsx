@@ -6,9 +6,18 @@ import SquidLogo from "../../assets/Images/SquidLogo.webp";
 import background from "../../assets/Images/Hp.jpg";
 import user_icon from "../../assets/Images/person.png";
 import logout_icon from "../../assets/Images/logout.png";
+import add_circle from "../../assets/Images/add-circle.webp";
+import red_x from "../../assets/Images/red-x.png";
 
 const HomePage = () => {
   const [accounts, setAccounts] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [income, setIncome] = useState("");
+  const [accountType, setAccountType] = useState("");
   const token = localStorage.getItem("token");
   const nickname = localStorage.getItem("nickname");
   const formattedNickname = nickname ? nickname.toUpperCase() : "";
@@ -16,17 +25,7 @@ const HomePage = () => {
 
   const navigate = useNavigate();
 
-  const handleSignOut = () => {
-    localStorage.clear();
-    navigate("/");
-  };
-
-  useEffect(() => {
-    if (!user_id) {
-      console.error("No user ID found");
-      return;
-    }
-
+  const fetchAccounts = () => {
     fetch(`/api/users/${user_id}/accounts`, {
       method: "GET",
       headers: {
@@ -42,7 +41,17 @@ const HomePage = () => {
       .catch((err) => {
         console.error("Failed to fetch account info:", err);
       });
+  };
+
+  useEffect(() => {
+    if (!user_id) return;
+    fetchAccounts();
   }, [user_id, token]);
+
+  const handleSignOut = () => {
+    localStorage.clear();
+    navigate("/");
+  };
 
   const handleTransfer = () => {
     const fromAccount = document.getElementById("fromAccountDropdown").value;
@@ -71,10 +80,42 @@ const HomePage = () => {
       .then((res) => res.json())
       .then((data) => {
         console.log("Transfer response: ", data);
-        // Optionally refresh account balances or notify the user of success/failure
       })
       .catch((err) => {
         console.error("Transfer error:", err);
+      });
+  };
+
+  const openBankAccount = () => {
+    setShowPopup(false);
+    fetch(`/api/users/${user_id}/accounts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        account_type: accountType,
+        balance: 0.0,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Account created:", data);
+
+        // ✅ Reset inputs
+        setFirstName("");
+        setLastName("");
+        setPhoneNumber("");
+        setEmail("");
+        setIncome("");
+        setAccountType("");
+
+        // Delay fetch to let backend commit and respond
+        fetchAccounts();
+      })
+      .catch((err) => {
+        console.error("Account creation error:", err);
       });
   };
 
@@ -85,12 +126,10 @@ const HomePage = () => {
           <img src={SquidLogo} alt="Squid Logo" className="logo-img" />
           <h1 className="logo-text">Squid Bank</h1>
         </div>
-
         <div className="logo-user">
           <img src={user_icon} alt="User Logo" className="logo-img2" />
           <h1 className="logo-text2">{formattedNickname}</h1>
         </div>
-
         <div className="signout-wrapper" onClick={handleSignOut}>
           <img
             src={logout_icon}
@@ -129,30 +168,143 @@ const HomePage = () => {
           </div>
 
           <div className="checking-account">
-            {accounts && accounts.length > 0 ? (
-              accounts.map((account, index) => (
-                <div
-                  key={index}
-                  onClick={() => {
-                    if (account.account_type === "Checking") {
-                      console.log("Checking account clicked");
-                    } else {
-                      console.log("Savings account clicked");
-                    }
-                  }}
+            {accounts &&
+              accounts
+                .filter(
+                  (account) =>
+                    account.account_type === "Checking" ||
+                    account.account_type === "Savings"
+                )
+                .map((account, index) => (
+                  <div className="account-balance" key={index}>
+                    <h3>SB {account.account_type}</h3>
+                    <p>Balance: ${account.balance.toFixed(2)} CAD</p>
+                  </div>
+                ))}
+
+            {accounts.length < 2 && (
+              <div className="open-account">
+                <img
+                  src={add_circle}
+                  alt="Add Circle"
+                  className="add-circle-logo"
+                />
+                <p
+                  style={{ color: "#006ac3" }}
+                  onClick={() => setShowPopup(true)}
                 >
-                  <h3>SB {account.account_type}</h3>
-                  <p>Balance: ${account.balance.toFixed(2)} CAD</p>
+                  Open a Bank Account
+                </p>
+              </div>
+            )}
+
+            {showPopup && (
+              <>
+                <div
+                  className="popup-overlay"
+                  onClick={() => setShowPopup(false)}
+                ></div>
+                <div className="account-creation-container">
+                  <div className="account-creation-title">
+                    <h1 style={{ marginTop: "0px", fontSize: "24px" }}>
+                      Bank Account Application
+                    </h1>
+                    <img
+                      src={red_x}
+                      alt="Red X"
+                      className="red-x"
+                      onClick={() => setShowPopup(false)}
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="First Name"
+                    className="account-creation-text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Last Name"
+                    className="account-creation-text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Phone Number"
+                    className="account-creation-text"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Email"
+                    className="account-creation-text"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Yearly Income"
+                    className="account-creation-text"
+                    value={income}
+                    onChange={(e) => setIncome(e.target.value)}
+                  />
+                  <select
+                    className="dropdown"
+                    value={accountType}
+                    onChange={(e) => setAccountType(e.target.value)}
+                  >
+                    <option value="">Type Of Account</option>
+                    <option value="Checking">Checking</option>
+                    <option value="Savings">Savings Account</option>
+                    <option value="Credit">Credit Card</option>
+                  </select>
+                  <div className="transfer-submit" onClick={openBankAccount}>
+                    <h1 className="submit-text">Submit</h1>
+                  </div>
                 </div>
-              ))
-            ) : (
-              <p>No accounts found</p>
+              </>
             )}
           </div>
 
           <div className="bank-text">
             <h1>Credit Cards</h1>
-            <div className="black-underline"></div>
+            <div
+              className="black-underline"
+              style={{ marginBottom: "10px" }}
+            ></div>
+            <div className="credit-account-section">
+              {/* Show Credit Card account(s) if they exist */}
+              {accounts
+                .filter((account) => account.account_type === "Credit")
+                .map((account, index) => (
+                  <div className="account-balance" key={`credit-${index}`}>
+                    <h3>SB {account.account_type}</h3>
+                    <p>Balance: ${account.balance.toFixed(2)} CAD</p>
+                  </div>
+                ))}
+
+              {/* Show Open Credit Card option if user doesn't already have one */}
+              {!accounts.some(
+                (account) => account.account_type === "Credit"
+              ) && (
+                <div className="open-account">
+                  <img
+                    src={add_circle}
+                    alt="Add Circle"
+                    className="add-circle-logo"
+                  />
+                  <p
+                    style={{ color: "#006ac3" }}
+                    onClick={() => setShowPopup(true)}
+                  >
+                    Open a Credit Card
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -184,8 +336,6 @@ const HomePage = () => {
           </div>
         </div>
       </div>
-
-      {/* Additional sections can be added here */}
     </div>
   );
 };

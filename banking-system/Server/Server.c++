@@ -109,7 +109,7 @@ int main() {
             crow::response res;
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "your_new_password"));
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
                 con->setSchema("banking_system");
 
                 std::unique_ptr<sql::Statement> stmt(con->createStatement());
@@ -153,7 +153,7 @@ int main() {
             std::string nickname = body["nickname"].s();
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "your_new_password"));
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
                 con->setSchema("banking_system");
                 std::unique_ptr<sql::PreparedStatement> checkStmt(
                     con->prepareStatement("SELECT email FROM users WHERE email = ?"));
@@ -202,7 +202,7 @@ int main() {
             std::string password = body["password"].s();
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "your_new_password"));
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
                 con->setSchema("banking_system");
                 std::unique_ptr<sql::PreparedStatement> stmt(
                     con->prepareStatement("SELECT * FROM users WHERE email = ?"));
@@ -253,7 +253,7 @@ int main() {
             crow::response res;
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "your_new_password"));
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
                 con->setSchema("banking_system");
                 std::unique_ptr<sql::PreparedStatement> stmt(
                     con->prepareStatement("SELECT account_type, balance FROM accounts WHERE user_id = ?")
@@ -309,7 +309,7 @@ int main() {
             while (retryCount < maxRetries && !success) {
                 try {
                     sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                    std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "your_new_password"));
+                    std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
                     con->setSchema("banking_system");
                     con->setAutoCommit(false);
                     
@@ -388,6 +388,61 @@ int main() {
         });
         return futureResponse.get();
     });
+
+    CROW_ROUTE(app, "/api/users/<int>/accounts")
+    .methods("POST"_method)
+    ([](const crow::request& req, crow::response& res, int userId) {
+        auto futureResponse = scheduler.scheduleTask(2, [&req, userId]() -> crow::response {
+            crow::response resInner;
+
+            auto body = crow::json::load(req.body);
+            if (!body) {
+                resInner.code = 400;
+                resInner.set_header("Content-Type", "application/json");
+                resInner.write("{\"error\": \"Invalid JSON\"}");
+                return resInner;
+            }
+
+            std::string accountType = body["account_type"].s();
+            double initialBalance = body.has("balance") ? body["balance"].d() : 0.0;
+
+            if (accountType != "Checking" && accountType != "Savings" && accountType != "Credit") {
+                resInner.code = 400;
+                resInner.set_header("Content-Type", "application/json");
+                resInner.write("{\"error\": \"Invalid account type\"}");
+                return resInner;
+            }
+
+            try {
+                sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                con->setSchema("banking_system");
+
+                std::unique_ptr<sql::PreparedStatement> insertStmt(
+                    con->prepareStatement("INSERT INTO accounts (user_id, balance, account_type) VALUES (?, ?, ?)"));
+                insertStmt->setInt(1, userId);
+                insertStmt->setDouble(2, initialBalance);
+                insertStmt->setString(3, accountType);
+                insertStmt->execute();
+
+                crow::json::wvalue resBody;
+                resBody["message"] = "Bank account created successfully.";
+                resInner.code = 201;
+                resInner.set_header("Content-Type", "application/json");
+                resInner.write(resBody.dump());
+            } catch (const std::exception& e) {
+                std::cerr << "❌ Account creation error: " << e.what() << std::endl;
+                resInner.code = 500;
+                resInner.set_header("Content-Type", "application/json");
+                resInner.write("{\"error\": \"Server error while creating account\"}");
+            }
+
+            return resInner;
+        });
+
+        res = futureResponse.get(); // set the response here
+    });
+
 
     app.port(3000).multithreaded().run();
 }

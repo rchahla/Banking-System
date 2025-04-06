@@ -167,7 +167,7 @@
   gap: 20px;
 }
 
-.checking-account > div {
+.account-balance {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -181,22 +181,112 @@
   padding: 0 10px;
 }
 
-.checking-account > div:hover {
+.account-balance:hover {
   box-shadow: 0 0 12px 3px rgba(0, 106, 195, 0.5);
   cursor: pointer;
 }
 
-.checking-account > div h3 {
+.account-balance h3 {
   font-size: 16px;
   font-weight: 300;
   margin: 0;
   color: #006ac3;
 }
 
-.checking-account > div p {
+.account-balance p {
   font-size: 14px;
   margin: 0;
   color: #1f1f1f;
+}
+
+.open-account {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: auto;
+  gap: 5px;
+}
+
+.add-circle-logo {
+  width: 25px;
+  height: 25px;
+}
+
+.open-account > p:hover {
+  cursor: pointer;
+  text-decoration-line: underline;
+}
+
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+}
+
+.account-creation-container {
+  position: fixed; /* Change from 'absolute' to 'fixed' to anchor it to the viewport */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  width: 400px;
+  background-color: #f2f6f6;
+  border: 1px solid black;
+  align-items: center;
+  /* position: relative; */
+}
+
+.account-creation-title {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  width: 400px;
+  justify-content: center;
+}
+
+.red-x {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.account-creation-text {
+  background-color: #ffff;
+  width: 300px;
+  height: 40px;
+  border: 1px solid black;
+  border-radius: 0px;
+  margin-bottom: 40px;
+}
+
+.account-creation-container .dropdown {
+  width: 300px;
+  height: 40px;
+  margin-top: 0px;
+  margin-bottom: 40px;
+  font-size: 15px;
+  padding: 10px;
+  border: 1px solid black;
+  border-radius: 0px;
+  background-color: #fff;
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
+.account-creation-container .transfer-submit {
+  height: 40px;
+  width: 300px;
+  margin-left: 0px;
 }
 
 /* === transfers-container === */
