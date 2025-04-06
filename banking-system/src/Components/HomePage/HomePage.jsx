@@ -18,6 +18,8 @@ const HomePage = () => {
   const [email, setEmail] = useState("");
   const [income, setIncome] = useState("");
   const [accountType, setAccountType] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipients, setRecipients] = useState([]);
   const token = localStorage.getItem("token");
   const nickname = localStorage.getItem("nickname");
   const formattedNickname = nickname ? nickname.toUpperCase() : "";
@@ -117,6 +119,19 @@ const HomePage = () => {
       .catch((err) => {
         console.error("Account creation error:", err);
       });
+  };
+
+  const addRecipients = () => {
+    if (recipientEmail.trim() === "") return;
+
+    // Check if already added
+    if (recipients.includes(recipientEmail.trim())) {
+      alert("Recipient already added.");
+      return;
+    }
+
+    setRecipients((prev) => [...prev, recipientEmail.trim()]);
+    setRecipientEmail(""); // Clear input box after adding
   };
 
   return (
@@ -324,6 +339,11 @@ const HomePage = () => {
               <option value="Checking">Checking Account</option>
               <option value="Savings">Savings Account</option>
               <option value="Credit">Credit Card</option>
+              {recipients.map((email, index) => (
+                <option key={`recipient-${index}`} value={email}>
+                  {email}
+                </option>
+              ))}
             </select>
             <h1 className="transfers-text">Amount</h1>
             <div className="amount-input-container">
@@ -337,14 +357,16 @@ const HomePage = () => {
         </div>
 
         <div className="add-people-container">
-          <h1 className="add-people-title">Add People To eTransfer</h1>
+          <h1 className="add-people-title">Add Recipients To eTransfer</h1>
           <div className="add-people">
             <input
               type="text"
               className="people-email"
-              placeholder="Their Email Address"
+              placeholder="Recipients Email Address"
+              value={recipientEmail}
+              onChange={(e) => setRecipientEmail(e.target.value)}
             />
-            <div className="transfer-submit" onClick={handleTransfer}>
+            <div className="transfer-submit" onClick={addRecipients}>
               <h1 className="submit-text">Add</h1>
             </div>
           </div>
