@@ -179,6 +179,35 @@ const HomePage = () => {
       });
   };
 
+  const fetchTransactions = (accountId) => {
+    fetch(`/api/accounts/${accountId}/transactions`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch transactions.");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          console.warn("Unexpected transactions data:", data);
+          setTransactions([]); // fallback
+        } else {
+          setTransactions(data);
+        }
+        setShowTransactions(true);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch transactions:", err);
+        setTransactions([]); // fallback to empty array to avoid crashing
+        setShowTransactions(true); // still show the panel with empty state
+      });
+  };
+
   return (
     <div className="homepage-container">
       <div className="top-bar">
@@ -518,6 +547,46 @@ const HomePage = () => {
           </div>
         </div>
       </div>
+
+      {showTransactions && (
+        <>
+          <div
+            className="popup-overlay"
+            onClick={() => {
+              setShowTransactions(false);
+              setTransactions([]);
+              setSelectedAccountId(null);
+            }}
+          ></div>
+
+          <div className="transactions-modal">
+            <h2>Transaction History</h2>
+            {transactions.length === 0 ? (
+              <p>No transactions found for this account.</p>
+            ) : (
+              <ul className="transaction-list">
+                {transactions.map((tx, index) => (
+                  <li key={index} className="transaction-item">
+                    <strong>{tx.type}</strong> - ${tx.amount.toFixed(2)} -{" "}
+                    {new Date(tx.timestamp).toLocaleString()} <br />
+                    <em>{tx.description}</em>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button
+              className="close-btn"
+              onClick={() => {
+                setShowTransactions(false);
+                setTransactions([]);
+                setSelectedAccountId(null);
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

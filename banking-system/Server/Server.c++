@@ -611,7 +611,40 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
         return futureResponse.get();
     });
 
+    CROW_ROUTE(app, "/api/accounts/<int>/transactions").methods("GET"_method)
+        ([](int accountId) {
+            auto futureResponse = scheduler.scheduleTask(2, [accountId]() -> crow::response {
+            crow::response res;
+        try {
+            sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+            con->setSchema("banking_system");
 
+            std::unique_ptr<sql::PreparedStatement> stmt(
+                con->prepareStatement("SELECT type, amount, timestamp, description FROM transactions WHERE account_id = ? ORDER BY timestamp DESC"));
+            stmt->setInt(1, accountId);
+            std::unique_ptr<sql::ResultSet> result(stmt->executeQuery());
+
+            crow::json::wvalue json;
+            int i = 0;
+            while (result->next()) {
+                json[i]["type"] = result->getString("type");
+                json[i]["amount"] = static_cast<double>(result->getDouble("amount"));
+                json[i]["timestamp"] = result->getString("timestamp");
+                json[i]["description"] = result->getString("description");
+                i++;
+            }
+
+            res.code = 200;
+            res.set_header("Content-Type", "application/json");
+            res.write(json.dump());
+        } catch (const std::exception& e) {
+            std::cerr << "Transaction fetch error: " << e.what() << std::endl;
+            res.code = 500;
+            res.write("{\"error\":\"Server error fetching transactions\"}");
+        }
+        return res;
+    });
 
     return futureResponse.get();
 });
