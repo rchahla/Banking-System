@@ -97,6 +97,7 @@ private:
 
 // Create a global scheduler with 4 worker threads.
 PriorityScheduler scheduler(4);
+std::mutex accountMutex;
 
 // ----- End Priority Scheduler ----- //
 
@@ -527,89 +528,90 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
         res = futureResponse.get(); // set the response here
     });
 
-    CROW_ROUTE(app, "/api/withdraw").methods("POST"_method)([](const crow::request& req) {
-        auto futureResponse = scheduler.scheduleTask(1, [req]() -> crow::response {
-            crow::response res;
-    
-            auto body = crow::json::load(req.body);
-            if (!body) {
-                res.code = 400;
-                res.write("{\"error\": \"Invalid JSON\"}");
-                return res;
-            }
-    
-            int userId = body["user_id"].i();
-            std::string accountType = body["account_type"].s();
-            double amount = body["amount"].d();
-    
-            if (amount <= 0) {
-                res.code = 400;
-                res.write("{\"error\": \"Amount must be greater than zero.\"}");
-                return res;
-            }
-    
-            try {
-                sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
-                con->setSchema("banking_system");
-                con->setAutoCommit(false);
-    
-                std::unique_ptr<sql::PreparedStatement> stmt(
-                    con->prepareStatement("SELECT account_id, balance FROM accounts WHERE user_id = ? AND account_type = ? FOR UPDATE"));
-                stmt->setInt(1, userId);
-                stmt->setString(2, accountType);
-                std::unique_ptr<sql::ResultSet> result(stmt->executeQuery());
-    
-                if (!result->next()) {
-                    con->rollback();
-                    res.code = 404;
-                    res.write("{\"error\": \"Account not found.\"}");
-                    return res;
-                }
-    
-                double currentBalance = result->getDouble("balance");
-                int accountId = result->getInt("account_id");
-    
-                if (currentBalance < amount) {
-                    con->rollback();
+        // Withdraw API with thread synchronization
+        CROW_ROUTE(app, "/api/withdraw").methods("POST"_method)([](const crow::request& req) {
+            auto futureResponse = scheduler.scheduleTask(1, [req]() -> crow::response {
+                crow::response res;
+                auto body = crow::json::load(req.body);
+                if (!body) {
                     res.code = 400;
-                    res.write("{\"error\": \"Insufficient funds.\"}");
+                    res.write("{\"error\": \"Invalid JSON\"}");
                     return res;
                 }
     
-                std::unique_ptr<sql::PreparedStatement> withdrawStmt(
-                    con->prepareStatement("UPDATE accounts SET balance = balance - ? WHERE account_id = ?"));
-                withdrawStmt->setDouble(1, amount);
-                withdrawStmt->setInt(2, accountId);
-                withdrawStmt->execute();
-
-                std::unique_ptr<sql::PreparedStatement> logStmt(
-                    con->prepareStatement("INSERT INTO transactions (user_id, account_id, type, amount, description) VALUES (?, ?, 'Withdraw', ?, ?)"));
-                logStmt->setInt(1, userId);
-                logStmt->setInt(2, accountId);
-                logStmt->setDouble(3, amount);
-                logStmt->setString(4, "Cash withdrawal at branch");
-                logStmt->execute();
-                
+                int userId = body["user_id"].i();
+                std::string accountType = body["account_type"].s();
+                double amount = body["amount"].d();
     
-                con->commit();
+                if (amount <= 0) {
+                    res.code = 400;
+                    res.write("{\"error\": \"Amount must be greater than zero.\"}");
+                    return res;
+                }
     
-                crow::json::wvalue resBody;
-                resBody["message"] = "Withdrawal successful.";
-                res.code = 200;
-                res.set_header("Content-Type", "application/json");
-                res.write(resBody.dump());
-            } catch (const sql::SQLException& e) {
-                res.code = 500;
-                res.set_header("Content-Type", "application/json");
-                res.write("{\"error\": \"Database error during withdrawal.\"}");
-            }
+                std::lock_guard<std::mutex> lock(accountMutex); // Synchronization block
     
-            return res;
+                try {
+                    sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+                    std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                    con->setSchema("banking_system");
+                    con->setAutoCommit(false);
+    
+                    std::unique_ptr<sql::PreparedStatement> stmt(
+                        con->prepareStatement("SELECT account_id, balance FROM accounts WHERE user_id = ? AND account_type = ? FOR UPDATE"));
+                    stmt->setInt(1, userId);
+                    stmt->setString(2, accountType);
+                    std::unique_ptr<sql::ResultSet> result(stmt->executeQuery());
+    
+                    if (!result->next()) {
+                        con->rollback();
+                        res.code = 404;
+                        res.write("{\"error\": \"Account not found.\"}");
+                        return res;
+                    }
+    
+                    double currentBalance = result->getDouble("balance");
+                    int accountId = result->getInt("account_id");
+    
+                    if (currentBalance < amount) {
+                        con->rollback();
+                        res.code = 400;
+                        res.write("{\"error\": \"Insufficient funds.\"}");
+                        return res;
+                    }
+    
+                    std::unique_ptr<sql::PreparedStatement> withdrawStmt(
+                        con->prepareStatement("UPDATE accounts SET balance = balance - ? WHERE account_id = ?"));
+                    withdrawStmt->setDouble(1, amount);
+                    withdrawStmt->setInt(2, accountId);
+                    withdrawStmt->execute();
+    
+                    std::unique_ptr<sql::PreparedStatement> logStmt(
+                        con->prepareStatement("INSERT INTO transactions (user_id, account_id, type, amount, description) VALUES (?, ?, 'Withdraw', ?, ?)"));
+                    logStmt->setInt(1, userId);
+                    logStmt->setInt(2, accountId);
+                    logStmt->setDouble(3, amount);
+                    logStmt->setString(4, "Cash withdrawal at branch");
+                    logStmt->execute();
+    
+                    con->commit();
+    
+                    crow::json::wvalue resBody;
+                    resBody["message"] = "Withdrawal successful.";
+                    res.code = 200;
+                    res.set_header("Content-Type", "application/json");
+                    res.write(resBody.dump());
+                } catch (const sql::SQLException& e) {
+                    res.code = 500;
+                    res.set_header("Content-Type", "application/json");
+                    res.write("{\"error\": \"Database error during withdrawal.\"}");
+                }
+    
+                return res;
+            });
+    
+            return futureResponse.get();
         });
-    
-        return futureResponse.get();
-    });
 
     CROW_ROUTE(app, "/api/accounts/<int>/transactions").methods("GET"_method)
         ([](int accountId) {
