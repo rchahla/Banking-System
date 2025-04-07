@@ -256,13 +256,14 @@ int main() {
                 std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
                 con->setSchema("banking_system");
                 std::unique_ptr<sql::PreparedStatement> stmt(
-                    con->prepareStatement("SELECT account_type, balance FROM accounts WHERE user_id = ?")
+                    con->prepareStatement("SELECT account_id, account_type, balance FROM accounts WHERE user_id = ?")
                 );
                 stmt->setInt(1, userId);
                 std::unique_ptr<sql::ResultSet> result(stmt->executeQuery());
                 crow::json::wvalue accounts;
                 int i = 0;
                 while (result->next()) {
+                    accounts[i]["account_id"] = result->getInt("account_id");
                     accounts[i]["account_type"] = result->getString("account_type");
                     accounts[i]["balance"] = static_cast<double>(result->getDouble("balance"));
                     i++;
@@ -281,7 +282,7 @@ int main() {
         return futureResponse.get();
     });
 
-    // POST /api/transfer - Priority 1
+   // POST /api/transfer - Priority 1
 CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& req) {
     int priority = 1;
     auto futureResponse = scheduler.scheduleTask(priority, [req]() -> crow::response {
@@ -310,7 +311,7 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
         int retryCount = 0;
         bool success = false;
 
-        std::unique_ptr<sql::Connection> con;  // Move con outside try/catch
+        std::unique_ptr<sql::Connection> con;
 
         while (retryCount < maxRetries && !success) {
             try {
@@ -398,6 +399,38 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
                 updateToStmt->setInt(2, toAccountId);
                 updateToStmt->executeUpdate();
 
+                // --- Log sender transaction ---
+                std::unique_ptr<sql::PreparedStatement> logFrom(
+                    con->prepareStatement("INSERT INTO transactions (user_id, account_id, type, amount, description) VALUES (?, ?, 'TransferOut', ?, ?)"));
+                logFrom->setInt(1, userId);
+                logFrom->setInt(2, fromAccountId);
+                logFrom->setDouble(3, amount);
+                logFrom->setString(4, "eTransfer to " + toAccountField);
+                logFrom->execute();
+
+                // --- Get sender's name ---
+                std::string senderName = "Unknown";
+                try {
+                    std::unique_ptr<sql::PreparedStatement> senderStmt(
+                        con->prepareStatement("SELECT username FROM users WHERE user_id = ?"));
+                    senderStmt->setInt(1, userId);
+                    std::unique_ptr<sql::ResultSet> senderResult(senderStmt->executeQuery());
+                    if (senderResult->next()) {
+                        senderName = senderResult->getString("username");
+                    }
+                } catch (...) {
+                    // Ignore name lookup errors
+                }
+
+                // --- Log recipient transaction with sender's name ---
+                std::unique_ptr<sql::PreparedStatement> logTo(
+                    con->prepareStatement("INSERT INTO transactions (user_id, account_id, type, amount, description) VALUES (?, ?, 'TransferIn', ?, ?)"));
+                logTo->setInt(1, toUserId);
+                logTo->setInt(2, toAccountId);
+                logTo->setDouble(3, amount);
+                logTo->setString(4, "eTransfer received from " + senderName);
+                logTo->execute();
+
                 con->commit();
                 success = true;
 
@@ -408,7 +441,7 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
                 res.write(resBody.dump());
                 return res;
             } catch (const sql::SQLException& e) {
-                if (e.getErrorCode() == 1213) {  // Deadlock error code
+                if (e.getErrorCode() == 1213) {  // Deadlock error
                     ++retryCount;
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     continue;
@@ -435,6 +468,8 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
 
     return futureResponse.get();
 });
+
+
 
 
 
@@ -491,6 +526,97 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
 
         res = futureResponse.get(); // set the response here
     });
+
+    CROW_ROUTE(app, "/api/withdraw").methods("POST"_method)([](const crow::request& req) {
+        auto futureResponse = scheduler.scheduleTask(1, [req]() -> crow::response {
+            crow::response res;
+    
+            auto body = crow::json::load(req.body);
+            if (!body) {
+                res.code = 400;
+                res.write("{\"error\": \"Invalid JSON\"}");
+                return res;
+            }
+    
+            int userId = body["user_id"].i();
+            std::string accountType = body["account_type"].s();
+            double amount = body["amount"].d();
+    
+            if (amount <= 0) {
+                res.code = 400;
+                res.write("{\"error\": \"Amount must be greater than zero.\"}");
+                return res;
+            }
+    
+            try {
+                sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                con->setSchema("banking_system");
+                con->setAutoCommit(false);
+    
+                std::unique_ptr<sql::PreparedStatement> stmt(
+                    con->prepareStatement("SELECT account_id, balance FROM accounts WHERE user_id = ? AND account_type = ? FOR UPDATE"));
+                stmt->setInt(1, userId);
+                stmt->setString(2, accountType);
+                std::unique_ptr<sql::ResultSet> result(stmt->executeQuery());
+    
+                if (!result->next()) {
+                    con->rollback();
+                    res.code = 404;
+                    res.write("{\"error\": \"Account not found.\"}");
+                    return res;
+                }
+    
+                double currentBalance = result->getDouble("balance");
+                int accountId = result->getInt("account_id");
+    
+                if (currentBalance < amount) {
+                    con->rollback();
+                    res.code = 400;
+                    res.write("{\"error\": \"Insufficient funds.\"}");
+                    return res;
+                }
+    
+                std::unique_ptr<sql::PreparedStatement> withdrawStmt(
+                    con->prepareStatement("UPDATE accounts SET balance = balance - ? WHERE account_id = ?"));
+                withdrawStmt->setDouble(1, amount);
+                withdrawStmt->setInt(2, accountId);
+                withdrawStmt->execute();
+
+                std::unique_ptr<sql::PreparedStatement> logStmt(
+                    con->prepareStatement("INSERT INTO transactions (user_id, account_id, type, amount, description) VALUES (?, ?, 'Withdraw', ?, ?)"));
+                logStmt->setInt(1, userId);
+                logStmt->setInt(2, accountId);
+                logStmt->setDouble(3, amount);
+                logStmt->setString(4, "Cash withdrawal at branch");
+                logStmt->execute();
+                
+    
+                con->commit();
+    
+                crow::json::wvalue resBody;
+                resBody["message"] = "Withdrawal successful.";
+                res.code = 200;
+                res.set_header("Content-Type", "application/json");
+                res.write(resBody.dump());
+            } catch (const sql::SQLException& e) {
+                res.code = 500;
+                res.set_header("Content-Type", "application/json");
+                res.write("{\"error\": \"Database error during withdrawal.\"}");
+            }
+    
+            return res;
+        });
+    
+        return futureResponse.get();
+    });
+
+
+
+    return futureResponse.get();
+});
+
+    
 
 
     app.port(3000).multithreaded().run();

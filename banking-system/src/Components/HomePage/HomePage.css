@@ -460,3 +460,68 @@
   flex-direction: column;
   margin-bottom: 30px;
 }
+
+.withdraw-amount-input {
+  border: none;
+  padding-left: 10px;
+  font-size: 16px;
+  width: 100%;
+  outline: none;
+}
+
+.transactions-container {
+  background-color: #111;
+  padding: 20px;
+  margin: 20px;
+  border-radius: 12px;
+  max-width: 600px;
+  color: white;
+}
+
+.transactions-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #111; /* same as .transactions-container */
+  color: white; /* white text */
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  z-index: 1001;
+  max-height: 80vh;
+  overflow-y: auto;
+  width: 90%;
+  max-width: 500px;
+}
+
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.transaction-list {
+  list-style: none;
+  padding: 0;
+}
+
+.transaction-item {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+}
+
+.close-btn {
+  margin-top: 15px;
+  padding: 8px 16px;
+  background-color: #006ac3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}

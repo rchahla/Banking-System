@@ -20,6 +20,10 @@ const HomePage = () => {
   const [accountType, setAccountType] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [recipients, setRecipients] = useState([]);
+  const [withdraws, setWithdraws] = useState("");
+  const [selectedAccountId, setSelectedAccountId] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [showTransactions, setShowTransactions] = useState(false);
   const token = localStorage.getItem("token");
   const nickname = localStorage.getItem("nickname");
   const formattedNickname = nickname ? nickname.toUpperCase() : "";
@@ -135,7 +139,45 @@ const HomePage = () => {
     setRecipientEmail(""); // Clear input box after adding
   };
 
-  const withdraw = () => {};
+  const withdraw = () => {
+    const dropdown = document.getElementById("withdrawDropdown");
+    const accountType = dropdown.value;
+    const amount = parseFloat(withdraws);
+
+    if (!accountType || isNaN(amount) || amount <= 0) {
+      alert("Please select a valid account and amount.");
+      return;
+    }
+
+    fetch("/api/withdraw", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        user_id: parseInt(user_id),
+        account_type: accountType,
+        amount: amount,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Withdraw response:", data);
+        alert(
+          data.message +
+            " Please go to your nearest Squid Bank location to pick up your money !" ||
+            "Withdrawal complete."
+        );
+        setWithdraws(""); // reset input
+        dropdown.value = "";
+        fetchAccounts(); // refresh account data
+      })
+      .catch((err) => {
+        console.error("Withdraw error:", err);
+        alert("An error occurred during withdrawal.");
+      });
+  };
 
   return (
     <div className="homepage-container">
@@ -194,7 +236,15 @@ const HomePage = () => {
                     account.account_type === "Savings"
                 )
                 .map((account, index) => (
-                  <div className="account-balance" key={index}>
+                  <div
+                    className="account-balance"
+                    key={index}
+                    onClick={() => {
+                      setSelectedAccountId(account.account_id);
+                      fetchTransactions(account.account_id);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
                     <h3>SB {account.account_type}</h3>
                     <p>Balance: ${account.balance.toFixed(2)} CAD</p>
                   </div>
@@ -302,7 +352,15 @@ const HomePage = () => {
               {accounts
                 .filter((account) => account.account_type === "Credit")
                 .map((account, index) => (
-                  <div className="account-balance" key={`credit-${index}`}>
+                  <div
+                    className="account-balance"
+                    key={`credit-${index}`}
+                    onClick={() => {
+                      setSelectedAccountId(account.account_id);
+                      fetchTransactions(account.account_id);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
                     <h3>SB {account.account_type}</h3>
                     <p>Balance: ${account.balance.toFixed(2)} CAD</p>
                   </div>
@@ -422,7 +480,7 @@ const HomePage = () => {
           </div>
 
           <div className="withdraw-container">
-            <h1 className="withdraw-title">Withdraw</h1>
+            <h1 className="withdraw-title">Withdrawal</h1>
             <div className="withdraw">
               <h1 className="transfers-text">From</h1>
               <select className="dropdown" id="withdrawDropdown">
@@ -447,12 +505,14 @@ const HomePage = () => {
                 <div className="currency-box">$</div>
                 <input
                   type="text"
-                  className="amount-input"
+                  className="withdraw-amount-input"
                   placeholder="0.00"
+                  value={withdraws}
+                  onChange={(e) => setWithdraws(e.target.value)}
                 />
               </div>
               <div className="transfer-submit" onClick={withdraw}>
-                <h1 className="submit-text">Withdraw</h1>
+                <h1 className="submit-text">Withdrawal</h1>
               </div>
             </div>
           </div>
