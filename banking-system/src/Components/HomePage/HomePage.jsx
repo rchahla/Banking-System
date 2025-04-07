@@ -38,10 +38,11 @@ const HomePage = () => {
       .then((res) => res.json())
       .then((data) => {
         console.log("Accounts data: ", data);
-        setAccounts(data);
+        setAccounts(data || []);
       })
       .catch((err) => {
         console.error("Failed to fetch account info:", err);
+        setAccounts([]); // Also fallback on error
       });
   };
 
@@ -133,6 +134,8 @@ const HomePage = () => {
     setRecipients((prev) => [...prev, recipientEmail.trim()]);
     setRecipientEmail(""); // Clear input box after adding
   };
+
+  const withdraw = () => {};
 
   return (
     <div className="homepage-container">
@@ -325,6 +328,45 @@ const HomePage = () => {
               )}
             </div>
           </div>
+
+          <div className="bank-text">
+            <h1>Investments</h1>
+            <div className="black-underline"></div>
+            <div className="open-account">
+              <img
+                src={add_circle}
+                alt="Add Circle"
+                className="add-circle-logo"
+              />
+              <p style={{ color: "#006ac3" }}>Purchase an Investment</p>
+            </div>
+          </div>
+
+          <div className="bank-text">
+            <h1>Loans</h1>
+            <div className="black-underline"></div>
+            <div className="open-account">
+              <img
+                src={add_circle}
+                alt="Add Circle"
+                className="add-circle-logo"
+              />
+              <p style={{ color: "#006ac3" }}>Apply for a Loan</p>
+            </div>
+          </div>
+
+          <div className="bank-text">
+            <h1>Mortgages</h1>
+            <div className="black-underline"></div>
+            <div className="open-account">
+              <img
+                src={add_circle}
+                alt="Add Circle"
+                className="add-circle-logo"
+              />
+              <p style={{ color: "#006ac3" }}>Prequalify for a mortgage</p>
+            </div>
+          </div>
         </div>
 
         <div className="transfers-container">
@@ -333,16 +375,20 @@ const HomePage = () => {
             <h1 className="transfers-text">From</h1>
             <select className="dropdown" id="fromAccountDropdown">
               <option value="">Select Account</option>
-              <option value="Checking">Checking Account</option>
-              <option value="Savings">Savings Account</option>
-              <option value="Credit">Credit Card</option>
+              {accounts.map((account, index) => (
+                <option key={`from-${index}`} value={account.account_type}>
+                  {account.account_type} Account
+                </option>
+              ))}
             </select>
             <h1 className="transfers-text">To</h1>
             <select className="dropdown" id="toAccountDropdown">
               <option value="">Select Account</option>
-              <option value="Checking">Checking Account</option>
-              <option value="Savings">Savings Account</option>
-              <option value="Credit">Credit Card</option>
+              {accounts.map((account, index) => (
+                <option key={`to-${index}`} value={account.account_type}>
+                  {account.account_type} Account
+                </option>
+              ))}
               {recipients.map((email, index) => (
                 <option key={`recipient-${index}`} value={email}>
                   {email}
@@ -372,6 +418,42 @@ const HomePage = () => {
             />
             <div className="transfer-submit" onClick={addRecipients}>
               <h1 className="submit-text">Add</h1>
+            </div>
+          </div>
+
+          <div className="withdraw-container">
+            <h1 className="withdraw-title">Withdraw</h1>
+            <div className="withdraw">
+              <h1 className="transfers-text">From</h1>
+              <select className="dropdown" id="withdrawDropdown">
+                <option value="">Select Account</option>
+                {accounts
+                  .filter(
+                    (account) =>
+                      account.account_type === "Checking" ||
+                      account.account_type === "Savings"
+                  )
+                  .map((account, index) => (
+                    <option
+                      key={`withdraw-${index}`}
+                      value={account.account_type}
+                    >
+                      {account.account_type} Account
+                    </option>
+                  ))}
+              </select>
+              <h1 className="transfers-text">Amount</h1>
+              <div className="amount-input-container">
+                <div className="currency-box">$</div>
+                <input
+                  type="text"
+                  className="amount-input"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="transfer-submit" onClick={withdraw}>
+                <h1 className="submit-text">Withdraw</h1>
+              </div>
             </div>
           </div>
         </div>
