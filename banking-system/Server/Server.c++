@@ -110,7 +110,7 @@ int main() {
             crow::response res;
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://34.130.214.64:3306", "root", "SE3350group10"));
                 con->setSchema("banking_system");
 
                 std::unique_ptr<sql::Statement> stmt(con->createStatement());
@@ -154,7 +154,7 @@ int main() {
             std::string nickname = body["nickname"].s();
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://34.130.214.64:3306", "root", "SE3350group10"));
                 con->setSchema("banking_system");
                 std::unique_ptr<sql::PreparedStatement> checkStmt(
                     con->prepareStatement("SELECT email FROM users WHERE email = ?"));
@@ -203,7 +203,7 @@ int main() {
             std::string password = body["password"].s();
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://34.130.214.64:3306", "root", "SE3350group10"));
                 con->setSchema("banking_system");
                 std::unique_ptr<sql::PreparedStatement> stmt(
                     con->prepareStatement("SELECT * FROM users WHERE email = ?"));
@@ -254,7 +254,7 @@ int main() {
             crow::response res;
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://34.130.214.64:3306", "root", "SE3350group10"));
                 con->setSchema("banking_system");
                 std::unique_ptr<sql::PreparedStatement> stmt(
                     con->prepareStatement("SELECT account_id, account_type, balance FROM accounts WHERE user_id = ?")
@@ -317,7 +317,7 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
         while (retryCount < maxRetries && !success) {
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                con.reset(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                con.reset(driver->connect("tcp://34.130.214.64:3306", "root", "SE3350group10"));
                 con->setSchema("banking_system");
                 con->setAutoCommit(false);
 
@@ -443,6 +443,7 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
                 return res;
             } catch (const sql::SQLException& e) {
                 if (e.getErrorCode() == 1213) {  // Deadlock error
+                    std::cerr << "⚠️ Deadlock detected. Retrying transfer (attempt " << (retryCount + 1) << ")..." << std::endl;
                     ++retryCount;
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     continue;
@@ -500,7 +501,7 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
 
             try {
                 sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                std::unique_ptr<sql::Connection> con(driver->connect("tcp://34.130.214.64:3306", "root", "SE3350group10"));
                 con->setSchema("banking_system");
 
                 std::unique_ptr<sql::PreparedStatement> insertStmt(
@@ -553,7 +554,7 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
     
                 try {
                     sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                    std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+                    std::unique_ptr<sql::Connection> con(driver->connect("tcp://34.130.214.64:3306", "root", "SE3350group10"));
                     con->setSchema("banking_system");
                     con->setAutoCommit(false);
     
@@ -619,7 +620,7 @@ CROW_ROUTE(app, "/api/transfer").methods("POST"_method)([](const crow::request& 
             crow::response res;
         try {
             sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-            std::unique_ptr<sql::Connection> con(driver->connect("tcp://127.0.0.1:3306", "root", "Riadchahla13"));
+            std::unique_ptr<sql::Connection> con(driver->connect("tcp://34.130.214.64:3306", "root", "SE3350group10"));
             con->setSchema("banking_system");
 
             std::unique_ptr<sql::PreparedStatement> stmt(
